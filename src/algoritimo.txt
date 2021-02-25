@@ -1,0 +1,2 @@
+como eu sei os pontos em qual devo fazer a alteração preciso apenas falar quais são as posições no if
+construir um for que vai ler a coluna e fazer o ajuste, um por um
