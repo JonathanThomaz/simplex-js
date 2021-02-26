@@ -54,25 +54,25 @@ function App() {
         console.log()
     ));
   }
-  function menorValorZ(): number {
+  function menorValorZ(): Array<number> {
     let arrayAux: Array<number> = [];
     for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
       if (arrayAjustes.ajuste[i] < 0)
         arrayAux.push(arrayAjustes.ajuste[i]);
     }
-    return Math.min.apply(Math, arrayAux)
+    return arrayAux;
 
   }
-  function getIndexMenorValor(array: Array<number>) {
-    for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
-      if (arrayAjustes.ajuste[i] === menorValorZ()) {
+  function getIndexMenorValor(array: Array<number>): number {
+    for (let i = 0; i < array.length - 1; i++) {
+      if (array[i] === Math.min.apply(Math, array)) {
         return i;
       }
     }
     return bigM;
   }
   function getColunaPivo(): Array<number> {
-    let indexColunaPivo: number = getIndexMenorValor(arrayAjustes.ajuste);
+    let indexColunaPivo: number = getIndexMenorValor(menorValorZ());
     let colunaPivo: Array<number> = [];
 
     for (let i = 0; i < pcvJSON.restricoes.length; i++) {
@@ -101,7 +101,8 @@ function App() {
         cof.push(bigM);
       }
     }
-    console.log(getIndexMenorValor(cof));
+    linhaPivo = pcvJSON.restricoes[getIndexMenorValor(cof)]
+    
     return linhaPivo;
   }
 
