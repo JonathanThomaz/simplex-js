@@ -12,15 +12,15 @@ function App() {
   const [arrayAjustes, setArrayAjustes] = useState({
     "ajuste": pcvJSON.objetivo
   });
-  const bigM = 99999;
+  const bigM: number = 99999;
   //let count: number = 0;
   let newZ: Array<number> = pcvJSON.objetivo;
   let ajuste: Array<number> = arrayAjustes.ajuste;
-  
-  
+
+
   //Funções
   //Essa função é resposavel por limpar a variavel que recebe os ajustes na função ajuste() e adcionar o novo ajuste na variavel arrayAjustes
-  function limparNewZ() {
+  function limparNewZ(): void {
     //console.log(`${count}Chamou limparNewZ ${newZ}`)
     newZ = [];
     adicionarAjuste(newZ);
@@ -28,7 +28,7 @@ function App() {
   }
 
   //Essa função é responsável por substitur o ajuste
-  function adicionarAjuste(newZ: Array<number>) {
+  function adicionarAjuste(newZ: Array<number>): void {
     ajuste = newZ;
     //console.log(`olha adc no ajustes ${ajuste}`);
     setArrayAjustes(prevState => { return { ...prevState, "ajuste": ajuste } });
@@ -37,9 +37,9 @@ function App() {
 
 
   //Esta função é responsável por ajustar a linha do Z
-  function ajustes() {
+  function ajustes(): void {
     pcvJSON.objetivo.map((item, indexColuna) => (
-      console.log(`verificando o item ${item} coluna ${indexColuna + 1}`),
+      //console.log(`verificando o item ${item} coluna ${indexColuna + 1}`),
       item === bigM ?
         pcvJSON.restricoes.map((restricao, indexLinha) => (
           restricao[indexColuna] === 1 ?
@@ -54,10 +54,58 @@ function App() {
         console.log()
     ));
   }
-  function teste() {
-    console.log("aqui vai o simplex")
+  function menorValorZ(): number {
+    let arrayAux: Array<number> = [];
+    for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
+      if (arrayAjustes.ajuste[i] < 0)
+        arrayAux.push(arrayAjustes.ajuste[i]);
+    }
+    return Math.min.apply(Math, arrayAux)
+
+  }
+  function getIndexMenorValor(array: Array<number>) {
+    for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
+      if (arrayAjustes.ajuste[i] === menorValorZ()) {
+        return i;
+      }
+    }
+    return bigM;
+  }
+  function getColunaPivo(): Array<number> {
+    let indexColunaPivo: number = getIndexMenorValor(arrayAjustes.ajuste);
+    let colunaPivo: Array<number> = [];
+
+    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
+      colunaPivo.push(pcvJSON.restricoes[i][indexColunaPivo]);
+    }
+    return colunaPivo;
+  }
+  function getColunaB(): Array<number> {
+    let colunaB: Array<number> = [];
+
+    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
+      colunaB.push(pcvJSON.restricoes[i][55]);
+    }
+    return colunaB;
+  }
+  function getLinhaPivo() {
+    let linhaPivo: Array<number> = [];
+    let cof: Array<number> = [];
+    let colunaPivo: Array<number> = getColunaPivo();
+    let colunaB: Array<number> = getColunaB();
+
+    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
+      if (colunaPivo[i] !== 0) {
+        cof.push(colunaB[i] / colunaPivo[i]);
+      } else {
+        cof.push(bigM);
+      }
+    }
+    console.log(getIndexMenorValor(cof));
+    return linhaPivo;
   }
 
+  console.log(getLinhaPivo())
   return (
     <div >
       <h1>Problema do caixeiro viajante - BigM </h1>
