@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { pcv } from './pcv';
 
+interface PCV {
+  objetivo: Array<number>,
+  restricoes: Array<Array<number>>
+}
+
 
 function App() {
-  useEffect(() => {
-    ajustes();
-  }, []);
-
   //variaveis
-  const [pcvJSON, setPcvJSON] = useState(pcv);
+  const [pcvJSON, setPcvJSON] = useState<PCV>(pcv);
   const [arrayAjustes, setArrayAjustes] = useState({
     "ajuste": pcvJSON.objetivo
   });
@@ -54,6 +55,8 @@ function App() {
         console.log()
     ));
   }
+
+  //Retorna o menor valor em um array do números menores que 0
   function menorValorZ(): Array<number> {
     let arrayAux: Array<number> = [];
     for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
@@ -63,6 +66,8 @@ function App() {
     return arrayAux;
 
   }
+
+  //Retorna o index do array onde se encontra o menor valor
   function getIndexMenorValor(array: Array<number>): number {
     for (let i = 0; i < array.length - 1; i++) {
       if (array[i] === Math.min.apply(Math, array)) {
@@ -71,6 +76,8 @@ function App() {
     }
     return bigM;
   }
+
+  //retorna um array com toda a coluna pivo
   function getColunaPivo(): Array<number> {
     let indexColunaPivo: number = getIndexMenorValor(menorValorZ());
     let colunaPivo: Array<number> = [];
@@ -80,6 +87,8 @@ function App() {
     }
     return colunaPivo;
   }
+
+  //retorna um array com toda a coluna de cof
   function getColunaB(): Array<number> {
     let colunaB: Array<number> = [];
 
@@ -88,12 +97,10 @@ function App() {
     }
     return colunaB;
   }
-  function getLinhaPivo() {
-    let linhaPivo: Array<number> = [];
+  function getCof(): Array<number> {
     let cof: Array<number> = [];
     let colunaPivo: Array<number> = getColunaPivo();
     let colunaB: Array<number> = getColunaB();
-
     for (let i = 0; i < pcvJSON.restricoes.length; i++) {
       if (colunaPivo[i] !== 0) {
         cof.push(colunaB[i] / colunaPivo[i]);
@@ -101,12 +108,46 @@ function App() {
         cof.push(bigM);
       }
     }
+    return cof;
+  }
+
+  //retorna um array com toda a linha pivo
+  function getLinhaPivo(): Array<number> {
+    let linhaPivo: Array<number> = [];
+    let cof: Array<number> = getCof();
     linhaPivo = pcvJSON.restricoes[getIndexMenorValor(cof)]
-    
+
     return linhaPivo;
   }
 
-  console.log(getLinhaPivo())
+  function simplex() {
+    let colunaPivo: Array<number> = getColunaPivo();
+    let cof: Array<number> = getCof();
+    let linhaPivo: Array<number> = pcvJSON.restricoes[getIndexMenorValor(cof)];
+    let objetivo: Array<number> = arrayAjustes.ajuste;
+    let newObjetivo: Array<number> = [];
+    let restricoes: Array<Array<number>> = [[]];
+    for (let i = 0; i < colunaPivo.length; i++) {
+      let restricao: Array<number> = [];
+      if (colunaPivo[i] === 1 && i !== getIndexMenorValor(cof)) {
+        pcvJSON.restricoes[i].forEach((item, index) => (restricao.push(item - linhaPivo[index])))
+        restricoes.push(restricao);
+      } else {
+        restricao = pcvJSON.restricoes[i];
+        restricoes.push(restricao);
+      }
+    }
+
+    if (linhaPivo !== undefined) {
+      objetivo.forEach((item, index) => (newObjetivo.push(item - (objetivo[getIndexMenorValor(menorValorZ())] * linhaPivo[index]))));
+    }
+
+    console.log(`Restricoes: ${restricoes}, Objetivo: ${newObjetivo}`);
+  }
+  useEffect(() => {
+    ajustes();
+  }, []);
+  console.log(simplex())
   return (
     <div >
       <h1>Problema do caixeiro viajante - BigM </h1>
