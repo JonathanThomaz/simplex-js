@@ -22,7 +22,6 @@ function App() {
   //Funções
   //Essa função é resposavel por limpar a variavel que recebe os ajustes na função ajuste() e adcionar o novo ajuste na variavel arrayAjustes
   function limparNewZ(): void {
-    //console.log(`${count}Chamou limparNewZ ${newZ}`)
     newZ = [];
     adicionarAjuste(newZ);
     //count++;
@@ -31,7 +30,6 @@ function App() {
   //Essa função é responsável por substitur o ajuste
   function adicionarAjuste(newZ: Array<number>): void {
     ajuste = newZ;
-    //console.log(`olha adc no ajustes ${ajuste}`);
     setArrayAjustes(prevState => { return { ...prevState, "ajuste": ajuste } });
 
   }
@@ -40,13 +38,10 @@ function App() {
   //Esta função é responsável por ajustar a linha do Z
   function ajustes(): void {
     pcvJSON.objetivo.map((item, indexColuna) => (
-      //console.log(`verificando o item ${item} coluna ${indexColuna + 1}`),
       item === bigM ?
         pcvJSON.restricoes.map((restricao, indexLinha) => (
           restricao[indexColuna] === 1 ?
             newZ.forEach((item, indexTeste) => (newZ.push(item - bigM * pcvJSON.restricoes[indexLinha][indexTeste])), limparNewZ(),)
-            //console.log(`teste ${pcvJSON.objetivo.forEach((item, indexTeste) => console.log(`item z ${indexTeste} valor ${item - bigM*pcvJSON.restricoes[indexLinha][indexTeste]} restricao[indexColuna] ${indexTeste} ${pcvJSON.restricoes[indexLinha][indexTeste]}`))}`)
-            //console.log(`Coluna ${indexColuna+1} Linha ${indexLinha+1} Restricao ${restricao[indexColuna]}`) ,
             :
             console.log()
         ),
@@ -57,19 +52,26 @@ function App() {
   }
 
   //Retorna o menor valor em um array do números menores que 0
-  function menorValorZ(): Array<number> {
+  function menorValorZ(array: Array<number>): Array<number> {
     let arrayAux: Array<number> = [];
-    for (let i = 0; i < arrayAjustes.ajuste.length - 1; i++) {
-      if (arrayAjustes.ajuste[i] < 0)
-        arrayAux.push(arrayAjustes.ajuste[i]);
+    for (let i = 0; i < array.length - 1; i++) {
+      if (array[i] < 0)
+        arrayAux.push(array[i]);
     }
     return arrayAux;
 
   }
-
+  function getIndexMenorValorNegativo(arrayObjetivo: Array<number>, arrayMenorZ: Array<number>): number {
+    for (let i = 0; i < arrayObjetivo.length - 1; i++) {
+      if (arrayObjetivo[i] === Math.min.apply(Math, arrayMenorZ)) {
+        return i;
+      }
+    }
+    return bigM;
+  }
   //Retorna o index do array onde se encontra o menor valor
   function getIndexMenorValor(array: Array<number>): number {
-    for (let i = 0; i < array.length - 1; i++) {
+    for (let i = 0; i < array.length; i++) {
       if (array[i] === Math.min.apply(Math, array)) {
         return i;
       }
@@ -78,76 +80,107 @@ function App() {
   }
 
   //retorna um array com toda a coluna pivo
-  function getColunaPivo(): Array<number> {
-    let indexColunaPivo: number = getIndexMenorValor(menorValorZ());
+  function getColunaPivo(arrayRestricoes: Array<Array<number>>, arrayObjetivo: Array<number>): Array<number> {
+    let indexColunaPivo: number = getIndexMenorValorNegativo(arrayObjetivo, menorValorZ(arrayObjetivo));
     let colunaPivo: Array<number> = [];
 
-    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
-      colunaPivo.push(pcvJSON.restricoes[i][indexColunaPivo]);
+    for (let i = 0; i < arrayRestricoes.length; i++) {
+      colunaPivo.push(arrayRestricoes[i][indexColunaPivo]);
     }
     return colunaPivo;
+
   }
 
   //retorna um array com toda a coluna de cof
-  function getColunaB(): Array<number> {
+  function getColunaB(arrayRestricoes: Array<Array<number>>): Array<number> {
     let colunaB: Array<number> = [];
 
-    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
-      colunaB.push(pcvJSON.restricoes[i][55]);
+    for (let i = 0; i < arrayRestricoes.length; i++) {
+      colunaB.push(arrayRestricoes[i][55]);
     }
     return colunaB;
   }
-  function getCof(): Array<number> {
+  function getCof(arrayRestricoes: Array<Array<number>>, arrayObjetivo: Array<number>): Array<number> {
     let cof: Array<number> = [];
-    let colunaPivo: Array<number> = getColunaPivo();
-    let colunaB: Array<number> = getColunaB();
-    for (let i = 0; i < pcvJSON.restricoes.length; i++) {
-      if (colunaPivo[i] !== 0) {
-        cof.push(colunaB[i] / colunaPivo[i]);
-      } else {
-        cof.push(bigM);
+    let colunaPivo: Array<number> = getColunaPivo(arrayRestricoes, arrayObjetivo);
+    let colunaB: Array<number> = getColunaB(arrayRestricoes);
+    if (colunaPivo !== null) {
+      for (let i = 0; i < arrayRestricoes.length; i++) {
+        if (colunaPivo[i] !== 0) {
+          cof.push(colunaB[i] / colunaPivo[i]);
+        } else {
+          cof.push(bigM);
+        }
       }
     }
     return cof;
   }
 
   //retorna um array com toda a linha pivo
-  function getLinhaPivo(): Array<number> {
+  function getLinhaPivo(arrayRestricoes: Array<Array<number>>, arrayObjetivo: Array<number>): Array<number> {
     let linhaPivo: Array<number> = [];
-    let cof: Array<number> = getCof();
+    let cof: Array<number> = getCof(arrayRestricoes, arrayObjetivo);
     linhaPivo = pcvJSON.restricoes[getIndexMenorValor(cof)]
 
     return linhaPivo;
   }
 
-  function simplex() {
-    let colunaPivo: Array<number> = getColunaPivo();
-    let cof: Array<number> = getCof();
-    let linhaPivo: Array<number> = pcvJSON.restricoes[getIndexMenorValor(cof)];
-    let objetivo: Array<number> = arrayAjustes.ajuste;
-    let newObjetivo: Array<number> = [];
-    let restricoes: Array<Array<number>> = [[]];
-    for (let i = 0; i < colunaPivo.length; i++) {
-      let restricao: Array<number> = [];
-      if (colunaPivo[i] === 1 && i !== getIndexMenorValor(cof)) {
-        pcvJSON.restricoes[i].forEach((item, index) => (restricao.push(item - linhaPivo[index])))
-        restricoes.push(restricao);
-      } else {
-        restricao = pcvJSON.restricoes[i];
-        restricoes.push(restricao);
+  function simplex(ajuste: Array<number>) {
+    let restricoes: Array<Array<number>> = pcvJSON.restricoes;
+    let objetivo: Array<number> = ajuste;
+    let indexColunaPivo = getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo));
+    console.log(`${indexColunaPivo}Restricoes: ${restricoes}, Objetivo: ${objetivo}`)
+    let count = 0;
+    while (indexColunaPivo !== bigM) {
+      
+      let colunaPivo: Array<number> = getColunaPivo(restricoes, objetivo);
+      let cof: Array<number> = getCof(restricoes, objetivo);
+      let linhaPivo: Array<number> = getLinhaPivo(restricoes, objetivo);
+      
+      let newObjetivo: Array<number> = [];
+      let newRestricoes: Array<Array<number>> = [];
+      for (let i = 0; i < colunaPivo.length; i++) {
+        let restricao: Array<number> = [];
+        if (colunaPivo[i] !== 0 && i !== getIndexMenorValor(cof)) {
+          for (let f = 0; f < restricoes[i].length; f++) {
+            restricao.push(restricoes[i][f] - (restricoes[i][indexColunaPivo] * linhaPivo[f]))
+          }
+          newRestricoes.push(restricao);
+        } else {
+          restricao = restricoes[i];
+          newRestricoes.push(restricao);
+        }
       }
+
+      if (linhaPivo !== undefined) {
+        for (let i = 0; i < objetivo.length; i++) {
+          //console.log(`${objetivo[indexColunaPivo]}*${linhaPivo[i]}=${Math.abs(objetivo[indexColunaPivo]) * linhaPivo[i]}`)
+          newObjetivo.push(objetivo[i] - (objetivo[indexColunaPivo]* linhaPivo[i]))
+        }
+      }
+      objetivo = newObjetivo;
+      restricoes = newRestricoes;
+      indexColunaPivo = getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo))
+      console.log(`${count} index:${getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo))} Restricoes: ${restricoes.forEach(item => console.log(`[${item}]`))}, Objetivo: [${objetivo}]`)
+      count++;
     }
 
-    if (linhaPivo !== undefined) {
-      objetivo.forEach((item, index) => (newObjetivo.push(item - (objetivo[getIndexMenorValor(menorValorZ())] * linhaPivo[index]))));
-    }
 
-    console.log(`Restricoes: ${restricoes}, Objetivo: ${newObjetivo}`);
+
+
+    // if (newRestricoes !== [] && newObjetivo !== []) {
+    //   setPcvJSON(prevState => { return { ...prevState, "restricoes": newRestricoes } });
+    //   setPcvJSON(prevState => { return { ...prevState, "objetivo": newObjetivo } });
+    // }
+
   }
+
   useEffect(() => {
     ajustes();
-  }, []);
-  console.log(simplex())
+    simplex(arrayAjustes.ajuste);
+  });
+  // if (getIndexMenorValor(menorValorZ()) !== bigM) { simplex(); }
+
   return (
     <div >
       <h1>Problema do caixeiro viajante - BigM </h1>
