@@ -9,7 +9,7 @@ interface PCV {
 
 function App() {
   //variaveis
-  const [pcvJSON, setPcvJSON] = useState<PCV>(pcv);
+  const pcvJSON: PCV = (pcv);
   const [arrayAjustes, setArrayAjustes] = useState({
     "ajuste": pcvJSON.objetivo
   });
@@ -56,6 +56,15 @@ function App() {
     let arrayAux: Array<number> = [];
     for (let i = 0; i < array.length - 1; i++) {
       if (array[i] < 0)
+        arrayAux.push(array[i]);
+    }
+    return arrayAux;
+
+  }
+  function valoresPositivos(array: Array<number>): Array<number> {
+    let arrayAux: Array<number> = [];
+    for (let i = 0; i < array.length; i++) {
+      if (array[i] >= 0)
         arrayAux.push(array[i]);
     }
     return arrayAux;
@@ -120,28 +129,34 @@ function App() {
   function getLinhaPivo(arrayRestricoes: Array<Array<number>>, arrayObjetivo: Array<number>): Array<number> {
     let linhaPivo: Array<number> = [];
     let cof: Array<number> = getCof(arrayRestricoes, arrayObjetivo);
-    linhaPivo = pcvJSON.restricoes[getIndexMenorValor(cof)]
-
+    linhaPivo = pcvJSON.restricoes[getIndexMenorValor(valoresPositivos(cof))]
+    //console.log(`${getIndexMenorValorNegativo(cof, valoresPositivos(cof))} linha ${linhaPivo}`)
     return linhaPivo;
   }
 
-  function simplex(ajuste: Array<number>) {
+  function simplex() {
     let restricoes: Array<Array<number>> = pcvJSON.restricoes;
-    let objetivo: Array<number> = ajuste;
+    let objetivo: Array<number> = arrayAjustes.ajuste;
     let indexColunaPivo = getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo));
-    console.log(`${indexColunaPivo}Restricoes: ${restricoes}, Objetivo: ${objetivo}`)
+    //console.log(`${indexColunaPivo}Restricoes: ${restricoes}, Objetivo: ${objetivo}`)
     let count = 0;
+
     while (indexColunaPivo !== bigM) {
-      
       let colunaPivo: Array<number> = getColunaPivo(restricoes, objetivo);
       let cof: Array<number> = getCof(restricoes, objetivo);
       let linhaPivo: Array<number> = getLinhaPivo(restricoes, objetivo);
-      
+      if (linhaPivo !== undefined) {
+        if (linhaPivo[indexColunaPivo] !== 1) {
+          for (let i = 0; i < linhaPivo.length; i++) {
+            linhaPivo[i] = linhaPivo[i] / linhaPivo[i]
+          }
+        }
+      }
       let newObjetivo: Array<number> = [];
       let newRestricoes: Array<Array<number>> = [];
       for (let i = 0; i < colunaPivo.length; i++) {
         let restricao: Array<number> = [];
-        if (colunaPivo[i] !== 0 && i !== getIndexMenorValor(cof)) {
+        if (linhaPivo !== undefined && colunaPivo[i] !== 0 && i !== getIndexMenorValorNegativo(cof, valoresPositivos(cof))) {
           for (let f = 0; f < restricoes[i].length; f++) {
             restricao.push(restricoes[i][f] - (restricoes[i][indexColunaPivo] * linhaPivo[f]))
           }
@@ -155,29 +170,23 @@ function App() {
       if (linhaPivo !== undefined) {
         for (let i = 0; i < objetivo.length; i++) {
           //console.log(`${objetivo[indexColunaPivo]}*${linhaPivo[i]}=${Math.abs(objetivo[indexColunaPivo]) * linhaPivo[i]}`)
-          newObjetivo.push(objetivo[i] - (objetivo[indexColunaPivo]* linhaPivo[i]))
+          newObjetivo.push(objetivo[i] - (objetivo[indexColunaPivo] * linhaPivo[i]))
         }
       }
       objetivo = newObjetivo;
       restricoes = newRestricoes;
       indexColunaPivo = getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo))
-      console.log(`${count} index:${getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo))} Restricoes: ${restricoes.forEach(item => console.log(`[${item}]`))}, Objetivo: [${objetivo}]`)
+      console.log(`${count} index:${getIndexMenorValorNegativo(objetivo, menorValorZ(objetivo))} Restricoes: ${restricoes}, Objetivo: [${objetivo}]`)
       count++;
     }
-
-
-
-
-    // if (newRestricoes !== [] && newObjetivo !== []) {
-    //   setPcvJSON(prevState => { return { ...prevState, "restricoes": newRestricoes } });
-    //   setPcvJSON(prevState => { return { ...prevState, "objetivo": newObjetivo } });
-    // }
+    const resposta: PCV = {"objetivo": objetivo, "restricoes": restricoes} 
+    return resposta;
 
   }
 
   useEffect(() => {
     ajustes();
-    simplex(arrayAjustes.ajuste);
+    console.log(simplex());
   });
   // if (getIndexMenorValor(menorValorZ()) !== bigM) { simplex(); }
 
